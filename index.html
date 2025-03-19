@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Player with Geolocation and Device Info</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f8f8;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      width: 80%;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+    video {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    .info-card {
+      background-color: #f0f4f7;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .info-card h2 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      color: #4a90e2;
+    }
+    .info-card p {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #555;
+    }
+    .details-list {
+      list-style-type: none;
+      padding-left: 0;
+      margin-bottom: 0;
+    }
+    .details-list li {
+      margin-bottom: 12px;
+    }
+    .details-list li span {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+    .console-output {
+      margin-top: 20px;
+      font-size: 1rem;
+      background-color: #222;
+      color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .loading {
+      font-size: 1.2rem;
+      color: #f0a500;
+      font-style: italic;
+      text-align: center;
+    }
+    .card-title {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+      color: #4a90e2;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #4a90e2;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+<!--     <h1>Video Player & User Information</h1> -->
+    
+    <div class="section-title">Video Player</div>
+    <video controls>
+      <source src="https://www.w3schools.com/html/movie.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    
+    <div class="section-title">User Information</div>
+
+    <div class="info-card" id="locationCard">
+      <div class="card-title">Geolocation</div>
+      <p id="location" class="loading">Fetching location...</p>
+    </div>
+
+    <div class="info-card" id="networkCard">
+      <div class="card-title">Network Information</div>
+      <p id="network" class="loading">Fetching network info...</p>
+    </div>
+
+    <div class="info-card" id="batteryCard">
+      <div class="card-title">Battery Information</div>
+      <p id="battery" class="loading">Fetching battery info...</p>
+    </div>
+
+    <div class="console-output" id="consoleOutput">
+      <!-- Console logs will appear here -->
+    </div>
+  </div>
+
+  <script>
+    // Function to display geolocation and user details
+    function displayUserDetails(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+      const userAgent = navigator.userAgent;
+      const browser = navigator.appName;
+      const platform = navigator.platform;
+      const language = navigator.language || navigator.userLanguage;
+
+      const locationElement = document.getElementById("location");
+      locationElement.innerHTML = `
+        <ul class="details-list">
+          <li><span>Latitude:</span> ${latitude}</li>
+          <li><span>Longitude:</span> ${longitude}</li>
+          <li><span>Accuracy:</span> ${accuracy} meters</li>
+          <li><span>Browser:</span> ${browser}</li>
+          <li><span>Platform:</span> ${platform}</li>
+          <li><span>Language:</span> ${language}</li>
+        </ul>
+      `;
+
+      const consoleOutput = document.getElementById("consoleOutput");
+      consoleOutput.innerHTML = `
+        User Details:
+        Location: Latitude: ${latitude}, Longitude: ${longitude}
+        Accuracy: ${accuracy} meters
+        Browser: ${browser}
+        Platform: ${platform}
+        Language: ${language}
+      `;
+
+      console.log('User Location:', latitude, longitude);
+      console.log('Accuracy:', accuracy, 'meters');
+      console.log('Browser:', browser);
+      console.log('Platform:', platform);
+      console.log('Language:', language);
+    }
+
+    // Handle error when geolocation is not available or denied
+    function errorHandler(error) {
+      const locationElement = document.getElementById("location");
+      locationElement.innerHTML = "Unable to retrieve location. Please allow location access.";
+      console.error('Error getting location:', error);
+    }
+
+    // Check if geolocation is available
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(displayUserDetails, errorHandler);
+    } else {
+      document.getElementById("location").innerHTML = "Geolocation is not supported by this browser.";
+    }
+
+    // Check Network Information (if available)
+    if (navigator.connection) {
+      const networkElement = document.getElementById("network");
+      const connectionType = navigator.connection.effectiveType;
+      const downlink = navigator.connection.downlink;
+      networkElement.innerHTML = `
+        <ul class="details-list">
+          <li><span>Network Type:</span> ${connectionType}</li>
+          <li><span>Downlink Speed:</span> ${downlink} Mbps</li>
+        </ul>
+      `;
+      
+      console.log('Network Connection:', connectionType);
+      console.log('Downlink Speed:', downlink, 'Mbps');
+    } else {
+      document.getElementById("network").innerHTML = "Network information is not available.";
+    }
+
+    // Check Battery Status (if available)
+    if (navigator.getBattery) {
+      navigator.getBattery().then(function(battery) {
+        const batteryElement = document.getElementById("battery");
+        batteryElement.innerHTML = `
+          <ul class="details-list">
+            <li><span>Battery Level:</span> ${Math.round(battery.level * 100)}%</li>
+            <li><span>Charging:</span> ${battery.charging ? 'Yes' : 'No'}</li>
+          </ul>
+        `;
+
+        console.log('Battery Level:', Math.round(battery.level * 100) + '%');
+        console.log('Charging:', battery.charging ? 'Yes' : 'No');
+      });
+    } else {
+      document.getElementById("battery").innerHTML = "Battery information is not available.";
+    }
+
+  </script>
+
+</body>
+</html>
