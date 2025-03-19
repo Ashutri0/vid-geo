@@ -125,6 +125,31 @@
     .video-controls button:hover {
       background-color: #357abd;
     }
+
+    /* Timeline */
+    .progress-container {
+      width: 100%;
+      height: 10px;
+      background-color: #ddd;
+      cursor: pointer;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background-color: #4a90e2;
+      border-radius: 5px;
+    }
+
+    /* Time display */
+    .time-display {
+      font-size: 1rem;
+      color: #333;
+      margin-top: 5px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -141,6 +166,14 @@
     <!-- Custom Controls for Video -->
     <div class="video-controls" id="customControls">
       <button id="playPauseButton">Play</button>
+    </div>
+
+    <!-- Video Timeline -->
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="time-display" id="timeDisplay">
+      <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
     </div>
     
     <div class="section-title">User Information</div>
@@ -168,8 +201,11 @@
   <script>
     const videoElement = document.getElementById('videoPlayer');
     const playPauseButton = document.getElementById('playPauseButton');
-    const customControls = document.getElementById('customControls');
-    
+    const progressBar = document.getElementById('progressBar');
+    const progressContainer = document.getElementById('progressContainer');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    const totalTimeDisplay = document.getElementById('totalTime');
+
     // Function to display geolocation and user details
     function displayUserDetails(position) {
       const latitude = position.coords.latitude;
@@ -226,6 +262,35 @@
         videoElement.pause();
         playPauseButton.textContent = 'Play';
       }
+    });
+
+    // Update Progress Bar and Time Display
+    videoElement.addEventListener('timeupdate', () => {
+      const currentTime = videoElement.currentTime;
+      const duration = videoElement.duration;
+
+      // Update the progress bar width based on the current time
+      const progress = (currentTime / duration) * 100;
+      progressBar.style.width = progress + '%';
+
+      // Update the time display
+      currentTimeDisplay.textContent = formatTime(currentTime);
+      totalTimeDisplay.textContent = formatTime(duration);
+    });
+
+    // Format time as MM:SS
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      return `${minutes < 10 ? '0' + minutes : minutes}:${remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds}`;
+    }
+
+    // Seek to a specific time when clicked on the progress bar
+    progressContainer.addEventListener('click', (e) => {
+      const offsetX = e.offsetX;
+      const width = progressContainer.offsetWidth;
+      const seekTime = (offsetX / width) * videoElement.duration;
+      videoElement.currentTime = seekTime;
     });
 
     // Check Network Information (if available)
