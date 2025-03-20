@@ -150,6 +150,18 @@
       margin-top: 5px;
       text-align: center;
     }
+
+    /* Fullscreen styles */
+    .fullscreen-video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+    }
+
   </style>
 </head>
 <body>
@@ -166,6 +178,7 @@
     <!-- Custom Controls for Video -->
     <div class="video-controls" id="customControls">
       <button id="playPauseButton">Play</button>
+      <button id="fullscreenButton">Fullscreen</button>
     </div>
 
     <!-- Video Timeline -->
@@ -201,13 +214,14 @@
   <script>
     const videoElement = document.getElementById('videoPlayer');
     const playPauseButton = document.getElementById('playPauseButton');
+    const fullscreenButton = document.getElementById('fullscreenButton');
     const progressBar = document.getElementById('progressBar');
     const progressContainer = document.getElementById('progressContainer');
     const currentTimeDisplay = document.getElementById('currentTime');
     const totalTimeDisplay = document.getElementById('totalTime');
 
     // Base64 encoded video URL (Replace with your encoded URL)
-    const encodedVideoUrl = "data:video/mp4;base64,aHR0cHM6Ly93d3cudzNzY2hvb2xzLmNvbS9odG1sL21vdmllLm1wNA==";
+    const encodedVideoUrl = "data:video/mp4;base64,AAAAIGZpbG0AAABkYXRhOm1wNDoAAAB5b3VyLXZpZGVvLXVybD0iaHR0cHM6Ly93d3cueW91dHViZS5jb20veW91ci12aWRlby5tcDQiOwo=";
 
     // Decode Base64 and set video source
     videoElement.src = atob(encodedVideoUrl.split(',')[1]);
@@ -237,6 +251,9 @@
         Location: Latitude: ${latitude}, Longitude: ${longitude}
         Accuracy: ${accuracy} meters
       `;
+      
+      // Enable the play button
+      playPauseButton.disabled = false;
     }
 
     // Handle error when geolocation is not available or denied
@@ -244,6 +261,7 @@
       // Show error message and disable video
       videoElement.classList.add("disabled-video");
       document.getElementById("errorMessage").style.display = "block";
+      playPauseButton.disabled = true; // Disable play button until geolocation is available
     }
 
     // Check if geolocation is available
@@ -254,6 +272,7 @@
       // Disable video if geolocation is not supported
       videoElement.classList.add("disabled-video");
       document.getElementById("errorMessage").style.display = "block";
+      playPauseButton.disabled = true; // Disable play button until geolocation is available
     }
 
     // Play/Pause Video on Button Click
@@ -264,6 +283,35 @@
       } else {
         videoElement.pause();
         playPauseButton.textContent = 'Play';
+      }
+    });
+
+    // Fullscreen Button to toggle fullscreen mode
+    fullscreenButton.addEventListener('click', () => {
+      if (videoElement.requestFullscreen) {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          videoElement.requestFullscreen();
+        }
+      } else if (videoElement.mozRequestFullScreen) { // Firefox
+        if (document.mozFullScreen) {
+          document.mozCancelFullScreen();
+        } else {
+          videoElement.mozRequestFullScreen();
+        }
+      } else if (videoElement.webkitRequestFullscreen) { // Chrome, Safari
+        if (document.webkitFullscreenElement) {
+          document.webkitExitFullscreen();
+        } else {
+          videoElement.webkitRequestFullscreen();
+        }
+      } else if (videoElement.msRequestFullscreen) { // IE/Edge
+        if (document.msFullscreenElement) {
+          document.msExitFullscreen();
+        } else {
+          videoElement.msRequestFullscreen();
+        }
       }
     });
 
