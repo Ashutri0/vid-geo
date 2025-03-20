@@ -369,6 +369,12 @@
         `;
       });
     }
+
+    // Prevent Right-click in Normal and Fullscreen Modes
+    videoElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      return false;
+    });
   </script>
 
 </body>
