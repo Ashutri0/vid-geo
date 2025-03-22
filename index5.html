@@ -150,6 +150,19 @@
       margin-top: 5px;
       text-align: center;
     }
+
+    /* Fullscreen styles */
+    .fullscreen-video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+    }
+
+    /* Black overlay for screenshot protection */
     .overlay {
       display: none;  /* Initially hidden */
       position: fixed;
@@ -168,7 +181,7 @@
     <h1>Video Player & User Information</h1>
     
     <div class="section-title">Video Player</div>
-    <video id="videoPlayer" oncontextmenu="return false;" preload="metadata">
+    <video id="videoPlayer" controlsList="nodownload nofullscreen" oncontextmenu="return false;" preload="metadata">
       Your browser does not support the video tag.
     </video>
     <p id="errorMessage" class="error-message">Location access is required to view the video.</p>
@@ -176,6 +189,7 @@
     <!-- Custom Controls for Video -->
     <div class="video-controls" id="customControls">
       <button id="playPauseButton">Play</button>
+      <button id="fullscreenButton">Fullscreen</button>
     </div>
 
     <!-- Video Timeline -->
@@ -207,38 +221,19 @@
       <!-- Console logs will appear here -->
     </div>
   </div>
-  
-   <!-- Add the overlay div -->
+
+  <!-- Add the overlay div -->
   <div id="overlay" class="overlay"></div>
 
   <script>
     const videoElement = document.getElementById('videoPlayer');
     const playPauseButton = document.getElementById('playPauseButton');
+    const fullscreenButton = document.getElementById('fullscreenButton');
     const progressBar = document.getElementById('progressBar');
     const progressContainer = document.getElementById('progressContainer');
     const currentTimeDisplay = document.getElementById('currentTime');
     const totalTimeDisplay = document.getElementById('totalTime');
-    
-    // Get the overlay element
     const overlay = document.getElementById('overlay');
-
-    // Detect when the right-click context menu is triggered (right-click event)
-    document.addEventListener('contextmenu', (event) => {
-      overlay.style.display = 'block'; // Show the overlay when right-click is detected
-      setTimeout(() => {
-        overlay.style.display = 'none'; // Hide overlay after a short delay
-      }, 500);  // 500ms delay before hiding
-    });
-
-    // Detect the Print Screen key (key code for Print Screen is 44)
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'PrintScreen' || event.key === 'F12') {  // F12 is the developer tools key
-        overlay.style.display = 'block'; // Show the overlay when PrintScreen or F12 is pressed
-        setTimeout(() => {
-          overlay.style.display = 'none'; // Hide overlay after a short delay
-        }, 500);  // 500ms delay before hiding
-      }
-    });
 
     // Base64 encoded video URL (Replace with your encoded URL)
     const encodedVideoUrl = "data:video/mp4;base64,aHR0cHM6Ly93d3cudzNzY2hvb2xzLmNvbS9odG1sL21vdmllLm1wNA==";
@@ -271,6 +266,9 @@
         Location: Latitude: ${latitude}, Longitude: ${longitude}
         Accuracy: ${accuracy} meters
       `;
+      
+      // Enable the play button
+      playPauseButton.disabled = false;
     }
 
     // Handle error when geolocation is not available or denied
@@ -278,6 +276,7 @@
       // Show error message and disable video
       videoElement.classList.add("disabled-video");
       document.getElementById("errorMessage").style.display = "block";
+      playPauseButton.disabled = true; // Disable play button until geolocation is available
     }
 
     // Check if geolocation is available
@@ -288,6 +287,7 @@
       // Disable video if geolocation is not supported
       videoElement.classList.add("disabled-video");
       document.getElementById("errorMessage").style.display = "block";
+      playPauseButton.disabled = true; // Disable play button until geolocation is available
     }
 
     // Play/Pause Video on Button Click
@@ -298,6 +298,35 @@
       } else {
         videoElement.pause();
         playPauseButton.textContent = 'Play';
+      }
+    });
+
+    // Fullscreen Button to toggle fullscreen mode
+    fullscreenButton.addEventListener('click', () => {
+      if (videoElement.requestFullscreen) {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          videoElement.requestFullscreen();
+        }
+      } else if (videoElement.mozRequestFullScreen) { // Firefox
+        if (document.mozFullScreen) {
+          document.mozCancelFullScreen();
+        } else {
+          videoElement.mozRequestFullScreen();
+        }
+      } else if (videoElement.webkitRequestFullscreen) { // Chrome, Safari
+        if (document.webkitFullscreenElement) {
+          document.webkitExitFullscreen();
+        } else {
+          videoElement.webkitRequestFullscreen();
+        }
+      } else if (videoElement.msRequestFullscreen) { // IE/Edge
+        if (document.msFullscreenElement) {
+          document.msExitFullscreen();
+        } else {
+          videoElement.msRequestFullscreen();
+        }
       }
     });
 
@@ -330,31 +359,41 @@
       videoElement.currentTime = seekTime;
     });
 
-    // Check Network Information (if available)
-    if (navigator.connection) {
-      const networkElement = document.getElementById("network");
-      const connectionType = navigator.connection.effectiveType;
-      const downlink = navigator.connection.downlink;
-      networkElement.innerHTML = `
-        <ul class="details-list">
-          <li><span>Network Type:</span> ${connectionType}</li>
-          <li><span>Downlink Speed:</span> ${downlink} Mbps</li>
-        </ul>
-      `;
-    }
+    // Detect screenshot attempts and show overlay
+    document.addEventListener('contextmenu', (event) => {
+      overlay.style.display = 'block';  // Show overlay on right-click
+      setTimeout(() => {
+        overlay.style.display = 'none';  // Hide overlay after 500ms
+      }, 500);
+    });
 
-    // Check Battery Status (if available)
-    if (navigator.getBattery) {
-      navigator.getBattery().then(function(battery) {
-        const batteryElement = document.getElementById("battery");
-        batteryElement.innerHTML = `
-          <ul class="details-list">
-            <li><span>Battery Level:</span> ${Math.round(battery.level * 100)}%</li>
-            <li><span>Charging:</span> ${battery.charging ? 'Yes' : 'No'}</li>
-          </ul>
-        `;
-      });
-    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'PrintScreen' || event.key === 'F12') { // Detect PrintScreen or F12
+        overlay.style.display = 'block';  // Show overlay on PrintScreen or F12
+        setTimeout(() => {
+          overlay.style.display = 'none';  // Hide overlay after 500ms
+        }, 500);
+      }
+    });
+
+    // Disable long press context menu on mobile
+    document.addEventListener('touchstart', (event) => {
+      event.preventDefault(); // Disable long press action
+    }, { passive: false });
+
+    // Disable pinch-to-zoom on mobile (optional)
+    document.addEventListener('gesturestart', (event) => {
+      event.preventDefault(); // Disable gesture zoom
+    });
+
+    // Prevent screenshot on mobile by showing overlay when video is playing
+    videoElement.addEventListener('play', () => {
+      overlay.style.display = 'block'; // Show overlay when the video starts
+    });
+
+    videoElement.addEventListener('pause', () => {
+      overlay.style.display = 'none'; // Hide overlay when the video is paused
+    });
   </script>
 
 </body>
