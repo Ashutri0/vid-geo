@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Player with Geolocation and Device Info</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f8f8;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      width: 80%;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+    }
+    video {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      pointer-events: auto;
+    }
+    .info-card {
+      background-color: #f0f4f7;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .info-card h2 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      color: #4a90e2;
+    }
+    .info-card p {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #555;
+    }
+    .details-list {
+      list-style-type: none;
+      padding-left: 0;
+      margin-bottom: 0;
+    }
+    .details-list li {
+      margin-bottom: 12px;
+    }
+    .details-list li span {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+    .console-output {
+      margin-top: 20px;
+      font-size: 1rem;
+      background-color: #222;
+      color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .loading {
+      font-size: 1.2rem;
+      color: #f0a500;
+      font-style: italic;
+      text-align: center;
+    }
+    .card-title {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+      color: #4a90e2;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #4a90e2;
+      text-align: center;
+    }
+    .error-message {
+      font-size: 1.2rem;
+      color: #e74c3c;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .disabled-video {
+      display: none;
+    }
+
+    /* Custom controls for the video */
+    .video-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .video-controls button {
+      background-color: #4a90e2;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin: 0 5px;
+    }
+    .video-controls button:hover {
+      background-color: #357abd;
+    }
+
+    /* Timeline */
+    .progress-container {
+      width: 100%;
+      height: 10px;
+      background-color: #ddd;
+      cursor: pointer;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background-color: #4a90e2;
+      border-radius: 5px;
+    }
+
+    /* Time display */
+    .time-display {
+      font-size: 1rem;
+      color: #333;
+      margin-top: 5px;
+      text-align: center;
+    }
+    .overlay {
+      display: none;  /* Initially hidden */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);  /* Black with opacity */
+      z-index: 10000;  /* Ensure it's above all other content */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Video Player & User Information</h1>
+    
+    <div class="section-title">Video Player</div>
+    <video id="videoPlayer" oncontextmenu="return false;" preload="metadata">
+      Your browser does not support the video tag.
+    </video>
+    <p id="errorMessage" class="error-message">Location access is required to view the video.</p>
+
+    <!-- Custom Controls for Video -->
+    <div class="video-controls" id="customControls">
+      <button id="playPauseButton">Play</button>
+    </div>
+
+    <!-- Video Timeline -->
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="time-display" id="timeDisplay">
+      <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+    </div>
+    
+    <div class="section-title">User Information</div>
+
+    <div class="info-card" id="locationCard">
+      <div class="card-title">Geolocation</div>
+      <p id="location" class="loading">Fetching location...</p>
+    </div>
+
+    <div class="info-card" id="networkCard">
+      <div class="card-title">Network Information</div>
+      <p id="network" class="loading">Fetching network info...</p>
+    </div>
+
+    <div class="info-card" id="batteryCard">
+      <div class="card-title">Battery Information</div>
+      <p id="battery" class="loading">Fetching battery info...</p>
+    </div>
+
+    <div class="console-output" id="consoleOutput">
+      <!-- Console logs will appear here -->
+    </div>
+  </div>
+  
+   <!-- Add the overlay div -->
+  <div id="overlay" class="overlay"></div>
+
+  <script>
+    const videoElement = document.getElementById('videoPlayer');
+    const playPauseButton = document.getElementById('playPauseButton');
+    const progressBar = document.getElementById('progressBar');
+    const progressContainer = document.getElementById('progressContainer');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    const totalTimeDisplay = document.getElementById('totalTime');
+    
+    // Get the overlay element
+    const overlay = document.getElementById('overlay');
+
+    // Detect when the right-click context menu is triggered (right-click event)
+    document.addEventListener('contextmenu', (event) => {
+      overlay.style.display = 'block'; // Show the overlay when right-click is detected
+      setTimeout(() => {
+        overlay.style.display = 'none'; // Hide overlay after a short delay
+      }, 500);  // 500ms delay before hiding
+    });
+
+    // Detect the Print Screen key (key code for Print Screen is 44)
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'PrintScreen' || event.key === 'F12') {  // F12 is the developer tools key
+        overlay.style.display = 'block'; // Show the overlay when PrintScreen or F12 is pressed
+        setTimeout(() => {
+          overlay.style.display = 'none'; // Hide overlay after a short delay
+        }, 500);  // 500ms delay before hiding
+      }
+    });
+
+    // Base64 encoded video URL (Replace with your encoded URL)
+    const encodedVideoUrl = "data:video/mp4;base64,AAAAIGZpbG0AAABkYXRhOm1wNDoAAAB5b3VyLXZpZGVvLXVybD0iaHR0cHM6Ly93d3cueW91dHViZS5jb20veW91ci12aWRlby5tcDQiOwo=";
+
+    // Decode Base64 and set video source
+    videoElement.src = atob(encodedVideoUrl.split(',')[1]);
+
+    // Function to display geolocation and user details
+    function displayUserDetails(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      // Show the video player and hide error message
+      videoElement.classList.remove("disabled-video");
+      document.getElementById("errorMessage").style.display = "none";
+
+      const locationElement = document.getElementById("location");
+      locationElement.innerHTML = `
+        <ul class="details-list">
+          <li><span>Latitude:</span> ${latitude}</li>
+          <li><span>Longitude:</span> ${longitude}</li>
+          <li><span>Accuracy:</span> ${accuracy} meters</li>
+        </ul>
+      `;
+
+      const consoleOutput = document.getElementById("consoleOutput");
+      consoleOutput.innerHTML = `
+        User Details:
+        Location: Latitude: ${latitude}, Longitude: ${longitude}
+        Accuracy: ${accuracy} meters
+      `;
+    }
+
+    // Handle error when geolocation is not available or denied
+    function errorHandler(error) {
+      // Show error message and disable video
+      videoElement.classList.add("disabled-video");
+      document.getElementById("errorMessage").style.display = "block";
+    }
+
+    // Check if geolocation is available
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(displayUserDetails, errorHandler);
+    } else {
+      document.getElementById("location").innerHTML = "Geolocation is not supported by this browser.";
+      // Disable video if geolocation is not supported
+      videoElement.classList.add("disabled-video");
+      document.getElementById("errorMessage").style.display = "block";
+    }
+
+    // Play/Pause Video on Button Click
+    playPauseButton.addEventListener('click', () => {
+      if (videoElement.paused) {
+        videoElement.play();
+        playPauseButton.textContent = 'Pause';
+      } else {
+        videoElement.pause();
+        playPauseButton.textContent = 'Play';
+      }
+    });
+
+    // Update Progress Bar and Time Display
+    videoElement.addEventListener('timeupdate', () => {
+      const currentTime = videoElement.currentTime;
+      const duration = videoElement.duration;
+
+      // Update the progress bar width based on the current time
+      const progress = (currentTime / duration) * 100;
+      progressBar.style.width = progress + '%';
+
+      // Update the time display
+      currentTimeDisplay.textContent = formatTime(currentTime);
+      totalTimeDisplay.textContent = formatTime(duration);
+    });
+
+    // Format time as MM:SS
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      return `${minutes < 10 ? '0' + minutes : minutes}:${remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds}`;
+    }
+
+    // Seek to a specific time when clicked on the progress bar
+    progressContainer.addEventListener('click', (e) => {
+      const offsetX = e.offsetX;
+      const width = progressContainer.offsetWidth;
+      const seekTime = (offsetX / width) * videoElement.duration;
+      videoElement.currentTime = seekTime;
+    });
+
+    // Check Network Information (if available)
+    if (navigator.connection) {
+      const networkElement = document.getElementById("network");
+      const connectionType = navigator.connection.effectiveType;
+      const downlink = navigator.connection.downlink;
+      networkElement.innerHTML = `
+        <ul class="details-list">
+          <li><span>Network Type:</span> ${connectionType}</li>
+          <li><span>Downlink Speed:</span> ${downlink} Mbps</li>
+        </ul>
+      `;
+    }
+
+    // Check Battery Status (if available)
+    if (navigator.getBattery) {
+      navigator.getBattery().then(function(battery) {
+        const batteryElement = document.getElementById("battery");
+        batteryElement.innerHTML = `
+          <ul class="details-list">
+            <li><span>Battery Level:</span> ${Math.round(battery.level * 100)}%</li>
+            <li><span>Charging:</span> ${battery.charging ? 'Yes' : 'No'}</li>
+          </ul>
+        `;
+      });
+    }
+  </script>
+
+</body>
+</html>
