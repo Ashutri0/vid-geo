@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Racing Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f3f3f3;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+
+
+
+        #restart-btn {
+            position: absolute;
+            bottom: 40%;
+            left: 40%;
+            padding: 6px;
+            transform: translateX(-50%, -50%);
+            display: none;
+            background-color: #a6f9a1;
+        }
+
+        canvas {
+            border-radius: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <button id="restart-btn" class="btn">Restart Game</button>
+    </div>
+
+    <script>
+        // Initialize the Phaser game
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x87CEEB, // Sky blue
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            }
+        };
+
+        const game = new Phaser.Game(config);
+
+        let car;
+        let cursors;
+        let obstacles;
+        let score = 0;
+        let scoreTick = 0;
+        let gameOver = false;
+        let restartBtn;
+
+        // Preload assets (for the player car, obstacles)
+        function preload() {
+            this.load.image('car', 'car.png');
+            this.load.image('obstacle', './obs.png');
+        }
+
+        // Create the game objects
+        function create() {
+            // Create car sprite
+            car = this.physics.add.image(game.config.width / 2, game.config.height - 100, 'car');
+            car.setCollideWorldBounds(true); // Ensure the car stays within bounds
+
+            // Create cursor keys for car movement
+            cursors = this.input.keyboard.createCursorKeys();
+
+            // Create an array for obstacles
+            obstacles = this.physics.add.group();
+
+            // Create an interval to generate obstacles
+            this.time.addEvent({
+                delay: 1000, // New obstacle every 1 second
+                callback: createObstacle,
+                callbackScope: this,
+                loop: true
+            });
+
+            // Add collision detection
+            this.physics.add.collider(car, obstacles, hitObstacle, null, this);
+
+            // Create score text
+            this.scoreText = this.add.text(20, 20, 'Score: 0', {
+                fontSize: '32px',
+                fill: '#000'
+            });
+
+            // Set up restart button
+            restartBtn = document.getElementById('restart-btn');
+            restartBtn.addEventListener('click', restartGame);
+
+            // Mobile controls: swipe left and right
+            this.input.on('pointerdown', touchStart, this);
+            this.input.on('pointerup', touchEnd, this);
+        }
+
+        // Update the game every frame
+        function update() {
+            if (gameOver) return; // Do not update the game if it's over
+
+            // Move the car with the arrow keys or touch controls
+            if (cursors.left.isDown || touchMove('left')) {
+                car.x -= 5;
+            } else if (cursors.right.isDown || touchMove('right')) {
+                car.x += 5;
+            }
+
+            // Slow down the score ticking
+            if (scoreTick % 180 === 0 && !gameOver) {
+                score++;
+                this.scoreText.setText('Score: ' + score);
+            }
+
+            scoreTick++;
+        }
+
+        // Create an obstacle (falling from the top)
+        function createObstacle() {
+            if (gameOver) return;
+
+            const obstacle = obstacles.create(Phaser.Math.Between(50, game.config.width - 50), -50, 'obstacle');
+            obstacle.setVelocityY(Phaser.Math.Between(100, 200)); // Falling speed
+            obstacle.setSize(50, 50);
+        }
+
+        // Handle the car hitting an obstacle
+        function hitObstacle(car, obstacle) {
+            gameOver = true;
+
+            // Stop obstacles from falling
+            obstacles.setVelocityY(0);
+
+            // Display the Game Over text and restart button
+            let gameOverText = this.add.text(game.config.width / 2, game.config.height / 2, 'GAME OVER', {
+                fontSize: '40px',
+                fill: '#ff0000'
+            }).setOrigin(0.5);
+
+            restartBtn.style.display = 'block'; // Show the restart button
+        }
+
+        // Restart the game
+        function restartGame() {
+            score = 0;
+            scoreTick = 0;
+            gameOver = false;
+            obstacles.clear(true, true); // Clear all obstacles
+            restartBtn.style.display = 'none'; // Hide the restart button
+
+            // Reset car position
+            car.x = game.config.width / 2;
+            car.y = game.config.height - 100;
+
+            // Start the game loop again
+            this.time.addEvent({
+                delay: 1000,
+                callback: createObstacle,
+                callbackScope: this,
+                loop: true
+            });
+
+            // Reset the score text
+            this.scoreText.setText('Score: 0');
+        }
+
+        // Touch controls
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const touchThreshold = 50;
+
+        function touchStart(pointer) {
+            touchStartX = pointer.x;
+        }
+
+        function touchEnd(pointer) {
+            touchEndX = pointer.x;
+            if (touchEndX - touchStartX > touchThreshold) {
+                car.x += 50; // Move right on swipe
+            } else if (touchStartX - touchEndX > touchThreshold) {
+                car.x -= 50; // Move left on swipe
+            }
+        }
+
+        // Helper to check left/right swipe
+        function touchMove(direction) {
+            if (direction === 'left' && touchStartX > touchEndX) return true;
+            if (direction === 'right' && touchStartX < touchEndX) return true;
+            return false;
+        }
+    </script>
+</body>
+
+</html>
