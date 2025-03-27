@@ -27,8 +27,7 @@
         /* Game container styles */
         .game-container {
             text-align: center;
-            max-width: 480px;
-            width: 100%;
+            width: auto;
         }
 
         h1 {
@@ -140,6 +139,11 @@
             max-width: 250px;
         }
 
+        video {
+            width: 100vw;
+            height: 100vh;
+        }
+
         /* For responsiveness */
         @media (max-width: 768px) {
             button {
@@ -208,17 +212,17 @@
         <div id="gameplay" class="section">
             <div class="timer" id="timer">Time: 30s</div>
             <div class="colors-container">
-                <div class="color-box red" data-color="red"></div>
-                <div class="color-box blue" data-color="blue"></div>
-                <div class="color-box green" data-color="green"></div>
-                <div class="color-box yellow" data-color="yellow"></div>
+                <div class="color-box red" data-color="red" aria-label="Red color box"></div>
+                <div class="color-box blue" data-color="blue" aria-label="Blue color box"></div>
+                <div class="color-box green" data-color="green" aria-label="Green color box"></div>
+                <div class="color-box yellow" data-color="yellow" aria-label="Yellow color box"></div>
             </div>
 
             <div class="sort-container">
-                <div class="sort-box" data-target-color="red"></div>
-                <div class="sort-box" data-target-color="blue"></div>
-                <div class="sort-box" data-target-color="green"></div>
-                <div class="sort-box" data-target-color="yellow"></div>
+                <div class="sort-box" data-target-color="red" aria-label="Red sort box"></div>
+                <div class="sort-box" data-target-color="blue" aria-label="Blue sort box"></div>
+                <div class="sort-box" data-target-color="green" aria-label="Green sort box"></div>
+                <div class="sort-box" data-target-color="yellow" aria-label="Yellow sort box"></div>
             </div>
         </div>
 
@@ -238,6 +242,9 @@
         const downloadSection = document.getElementById('download');
         let countdown = 30;
         let interval;
+
+        // Disable drag-and-drop initially
+        disableDrag();
 
         // Disable drag-and-drop before 11 seconds and after 25 seconds
         function disableDrag() {
@@ -326,9 +333,6 @@
             introSection.style.display = 'none'; // Hide intro after 10 seconds
             startTimer();
         }, 10000);
-
-        // Start the game when the page loads
-        startTimer();
     </script>
 </body>
 
