@@ -4,40 +4,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playable Ad</title>
+    <title>Playable Ad - Colorwood Sort Game</title>
     <style>
         /* Reset some default styling */
-        body,
-        html {
+        * {
             margin: 0;
             padding: 0;
-            height: 100%;
-            width: 100%;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            box-sizing: border-box;
         }
 
-        /* Make sure all sections fill the screen height */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .game-container {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .colors-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .color-box {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .color-box.red {
+            background-color: red;
+        }
+
+        .color-box.blue {
+            background-color: blue;
+        }
+
+        .color-box.green {
+            background-color: green;
+        }
+
+        .color-box.yellow {
+            background-color: yellow;
+        }
+
+        .sort-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .sort-box {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background-color: white;
+            position: relative;
+        }
+
+        .sort-box[data-target-color="red"] {
+            border-color: red;
+        }
+
+        .sort-box[data-target-color="blue"] {
+            border-color: blue;
+        }
+
+        .sort-box[data-target-color="green"] {
+            border-color: green;
+        }
+
+        .sort-box[data-target-color="yellow"] {
+            border-color: yellow;
+        }
+
+        .color-box.dragging {
+            transform: scale(1.2);
+        }
+
+        /* Disabled styles */
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Timer */
+        .timer {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        /* Section visibility */
         .section {
             display: none;
-            height: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            text-align: center;
         }
 
         #intro {
             display: block;
         }
 
-        /* Make video fit within the mobile screen */
-        video {
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* Style buttons to be responsive */
         button {
             padding: 15px 25px;
             font-size: 18px;
@@ -51,24 +133,7 @@
             max-width: 250px;
         }
 
-        /* For the gameplay section */
-        #gameplay {
-            margin-top: 20px;
-        }
-
-        /* For the download section */
-        #download {
-            margin-top: 20px;
-        }
-
-        /* Optional: Style score text for mobile fit */
-        #score {
-            font-size: 20px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        /* Ensure proper responsive layout */
+        /* For responsiveness */
         @media (max-width: 768px) {
             button {
                 font-size: 16px;
@@ -102,66 +167,141 @@
 </head>
 
 <body>
-    <div id="intro" class="section">
-        <p>Welcome to the Game! Get ready for an exciting adventure!</p>
-        <video controls autoplay muted>
-            <source src="https://vid-geo.vercel.app/screen-20250327-131704.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
+    <div class="game-container">
+        <!-- Intro Section -->
+        <div id="intro" class="section">
+            <p>Welcome to Colorwood Sort! Sort the colors before time runs out!</p>
+            <video controls autoplay muted>
+                <source src="https://vid-geo.vercel.app/screen-20250327-131704.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
 
-    <div id="gameplay" class="section">
-        <p>Click the button to score points!</p>
-        <button id="gameButton">Click Me</button>
-        <p id="score">Score: 0</p>
-    </div>
+        <!-- Gameplay Section -->
+        <div id="gameplay" class="section">
+            <div class="timer" id="timer">Time: 30s</div>
+            <div class="colors-container">
+                <div class="color-box red" data-color="red"></div>
+                <div class="color-box blue" data-color="blue"></div>
+                <div class="color-box green" data-color="green"></div>
+                <div class="color-box yellow" data-color="yellow"></div>
+            </div>
 
-    <div id="download" class="section">
-        <p>Great job! Want to play more? Download now!</p>
-        <button id="downloadBtn">Download</button>
+            <div class="sort-container">
+                <div class="sort-box" data-target-color="red"></div>
+                <div class="sort-box" data-target-color="blue"></div>
+                <div class="sort-box" data-target-color="green"></div>
+                <div class="sort-box" data-target-color="yellow"></div>
+            </div>
+        </div>
+
+        <!-- Download Section -->
+        <div id="download" class="section">
+            <p>Great job! Want to play more? Download now!</p>
+            <button id="downloadBtn">Download</button>
+        </div>
     </div>
 
     <script>
-        let currentSection = 0;
-const sections = ['intro', 'gameplay', 'download'];
-let score = 0;
+        const colorBoxes = document.querySelectorAll('.color-box');
+        const sortBoxes = document.querySelectorAll('.sort-box');
+        const timerElement = document.getElementById('timer');
+        const introSection = document.getElementById('intro');
+        const gameplaySection = document.getElementById('gameplay');
+        const downloadSection = document.getElementById('download');
+        let countdown = 30;
+        let interval;
 
-function showSection(section) {
-    // Hide all sections
-    sections.forEach((id) => {
-        document.getElementById(id).style.display = 'none';
-    });
-    // Show the requested section
-    document.getElementById(section).style.display = 'block';
-}
+        // Disable drag-and-drop before 11 seconds and after 25 seconds
+        function disableDrag() {
+            colorBoxes.forEach(box => {
+                box.classList.add('disabled');
+            });
+            sortBoxes.forEach(box => {
+                box.classList.add('disabled');
+            });
+        }
 
-function nextSection() {
-    if (currentSection < sections.length - 1) {
-        currentSection++;
-        showSection(sections[currentSection]);
-    }
-}
+        function enableDrag() {
+            colorBoxes.forEach(box => {
+                box.classList.remove('disabled');
+            });
+            sortBoxes.forEach(box => {
+                box.classList.remove('disabled');
+            });
+        }
 
-// Handle interactive gameplay
-document.getElementById('gameButton').addEventListener('click', () => {
-    score++;
-    document.getElementById('score').textContent = `Score: ${score}`;
-});
+        // Add event listeners to handle dragging and dropping
+        colorBoxes.forEach(colorBox => {
+            colorBox.setAttribute('draggable', true);
 
-// Timing and transitions
-setTimeout(() => {
-    nextSection(); // Move to gameplay after 10 seconds
-}, 10000);
+            colorBox.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('disabled')) return;
+                e.dataTransfer.setData('color', e.target.dataset.color);
+                e.target.classList.add('dragging');
+            });
 
-setTimeout(() => {
-    nextSection(); // Move to download section after 25 seconds
-}, 25000);
+            colorBox.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+        });
 
-// Redirect to Play Store on download button click
-document.getElementById('downloadBtn').addEventListener('click', () => {
-    window.location.href = 'https://play.google.com/store'; // Redirect to Play Store
-});
+        sortBoxes.forEach(sortBox => {
+            sortBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
 
+            sortBox.addEventListener('drop', (e) => {
+                const color = e.dataTransfer.getData('color');
+                const targetColor = e.target.dataset.targetColor;
+
+                if (color === targetColor) {
+                    e.target.style.backgroundColor = color;
+                    e.target.style.opacity = 0.7;
+                    e.target.classList.add('completed');
+                    checkCompletion();
+                }
+            });
+        });
+
+        // Function to check if all boxes are sorted
+        function checkCompletion() {
+            const completedSortBoxes = document.querySelectorAll('.sort-box.completed');
+            if (completedSortBoxes.length === sortBoxes.length) {
+                alert('Congratulations, you have completed the game!');
+            }
+        }
+
+        // Timer logic
+        function startTimer() {
+            interval = setInterval(() => {
+                countdown--;
+                timerElement.textContent = `Time: ${countdown}s`;
+
+                if (countdown === 25) {
+                    enableDrag(); // Enable interaction from 11-25 seconds
+                    gameplaySection.style.display = 'block'; // Show the gameplay
+                } else if (countdown <= 10) {
+                    disableDrag(); // Disable interaction before 11 seconds
+                }
+
+                if (countdown === 0) {
+                    clearInterval(interval);
+                    disableDrag(); // Ensure no interaction after 30 seconds
+                    gameplaySection.style.display = 'none'; // Hide gameplay section
+                    downloadSection.style.display = 'block'; // Show the download section
+                }
+            }, 1000);
+        }
+
+        // Start the game with the intro section
+        setTimeout(() => {
+            introSection.style.display = 'none'; // Hide intro after 10 seconds
+            startTimer();
+        }, 10000);
+
+        // Start the game when the page loads
+        startTimer();
     </script>
 </body>
 
